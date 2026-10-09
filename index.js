@@ -1,32 +1,13 @@
+require('dotenv').config();
+
 const express = require('express');
+const pool = require('./config/db');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Middleware para recibir datos en formato JSON
 app.use(express.json());
-
-// Arreglo en memoria para simular una base de datos
-let productos = [
-    {
-        id: 1,
-        nombre: 'Laptop Lenovo',
-        precio: 15000,
-        categoria: 'Computación'
-    },
-    {
-        id: 2,
-        nombre: 'Mouse Logitech',
-        precio: 500,
-        categoria: 'Accesorios'
-    },
-    {
-        id: 3,
-        nombre: 'Teclado Mecánico',
-        precio: 1200,
-        categoria: 'Accesorios'
-    }
-];
 
 // Ruta principal
 app.get('/', (req, res) => {
@@ -35,84 +16,203 @@ app.get('/', (req, res) => {
 
 // GET /api/productos
 // Obtener todos los productos
-app.get('/api/productos', (req, res) => {
-    res.json(productos);
+app.get('/api/productos', async (req, res) => {
+    try {
+        const resultado = await pool.query(
+            'SELECT * FROM productos ORDER BY id ASC'
+        );
+
+        res.json(resultado.rows);
+    } catch (error) {
+        console.error('Error al consultar productos:', error.message);
+
+        res.status(500).json({
+            mensaje: 'Error interno al consultar los productos'
+        });
+    }
 });
 
 // GET /api/productos/:id
 // Obtener un producto por ID
-app.get('/api/productos/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const producto = productos.find(p => p.id === id);
+app.get('/api/productos/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
 
-    if (!producto) {
-        return res.status(404).json({
-            mensaje: 'Producto no encontrado'
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                mensaje: 'El ID debe ser un número entero positivo'
+            });
+        }
+
+        const resultado = await pool.query(
+            'SELECT * FROM productos WHERE id = $1',
+            [id]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                mensaje: 'Producto no encontrado'
+            });
+        }
+
+        res.json(resultado.rows[0]);
+    } catch (error) {
+        console.error('Error al consultar producto:', error.message);
+
+        res.status(500).json({
+            mensaje: 'Error interno al consultar el producto'
         });
     }
-
-    res.json(producto);
 });
 
 // POST /api/productos
 // Crear un nuevo producto
-app.post('/api/productos', (req, res) => {
-    const nuevoProducto = {
-        id: productos.length > 0
-            ? Math.max(...productos.map(p => p.id)) + 1
-            : 1,
-        nombre: req.body.nombre,
-        precio: req.body.precio,
-        categoria: req.body.categoria
-    };
+app.post('/api/productos', async (req, res) => {
+    try {
+        const { nombre, precio, categoria } = req.body;
 
-    productos.push(nuevoProducto);
+        if (
+            typeof nombre !== 'string' ||
+            !nombre.trim() ||
+            precio === undefined ||
+            precio === null ||
+            precio === '' ||
+            !Number.isFinite(Number(precio)) ||
+            Number(precio) < 0 ||
+            typeof categoria !== 'string' ||
+            !categoria.trim()
+        ) {
+            return res.status(400).json({
+                mensaje: 'Debes enviar nombre, precio válido y categoria'
+            });
+        }
 
-    res.status(201).json(nuevoProducto);
+        const resultado = await pool.query(
+            `INSERT INTO productos (nombre, precio, categoria)
+             VALUES ($1, $2, $3)
+             RETURNING *`,
+            [nombre.trim(), Number(precio), categoria.trim()]
+        );
+
+        res.status(201).json(resultado.rows[0]);
+    } catch (error) {
+        console.error('Error al crear producto:', error.message);
+
+        res.status(500).json({
+            mensaje: 'Error interno al crear el producto'
+        });
+    }
 });
 
 // PUT /api/productos/:id
-// Actualizar un producto
-app.put('/api/productos/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const indice = productos.findIndex(p => p.id === id);
+// Actualizar un producto existente
+app.put('/api/productos/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+        const { nombre, precio, categoria } = req.body;
 
-    if (indice === -1) {
-        return res.status(404).json({
-            mensaje: 'Producto no encontrado'
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                mensaje: 'El ID debe ser un número entero positivo'
+            });
+        }
+
+        if (
+            typeof nombre !== 'string' ||
+            !nombre.trim() ||
+            precio === undefined ||
+            precio === null ||
+            precio === '' ||
+            !Number.isFinite(Number(precio)) ||
+            Number(precio) < 0 ||
+            typeof categoria !== 'string' ||
+            !categoria.trim()
+        ) {
+            return res.status(400).json({
+                mensaje: 'Debes enviar nombre, precio válido y categoria'
+            });
+        }
+
+        const resultado = await pool.query(
+            `UPDATE productos
+             SET nombre = $1, precio = $2, categoria = $3
+             WHERE id = $4
+             RETURNING *`,
+            [nombre.trim(), Number(precio), categoria.trim(), id]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                mensaje: 'Producto no encontrado'
+            });
+        }
+
+        res.json(resultado.rows[0]);
+    } catch (error) {
+        console.error('Error al actualizar producto:', error.message);
+
+        res.status(500).json({
+            mensaje: 'Error interno al actualizar el producto'
         });
     }
-
-    productos[indice] = {
-        id: id,
-        nombre: req.body.nombre,
-        precio: req.body.precio,
-        categoria: req.body.categoria
-    };
-
-    res.json(productos[indice]);
 });
 
 // DELETE /api/productos/:id
 // Eliminar un producto
-app.delete('/api/productos/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    const indice = productos.findIndex(p => p.id === id);
+app.delete('/api/productos/:id', async (req, res) => {
+    try {
+        const id = Number(req.params.id);
 
-    if (indice === -1) {
-        return res.status(404).json({
-            mensaje: 'Producto no encontrado'
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                mensaje: 'El ID debe ser un número entero positivo'
+            });
+        }
+
+        const resultado = await pool.query(
+            'DELETE FROM productos WHERE id = $1 RETURNING *',
+            [id]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                mensaje: 'Producto no encontrado'
+            });
+        }
+
+        res.json({
+            mensaje: 'Producto eliminado correctamente',
+            producto: resultado.rows[0]
+        });
+    } catch (error) {
+        console.error('Error al eliminar producto:', error.message);
+
+        res.status(500).json({
+            mensaje: 'Error interno al eliminar el producto'
         });
     }
-
-    productos.splice(indice, 1);
-
-    res.json({
-        mensaje: 'Producto eliminado correctamente'
-    });
 });
 
-// Iniciar el servidor
-app.listen(PORT, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
-});
+// Verificar la conexión e iniciar el servidor
+async function iniciarServidor() {
+    try {
+        await pool.query('SELECT NOW()');
+
+        console.log('Conectado exitosamente a PostgreSQL');
+
+        app.listen(PORT, () => {
+            console.log(
+                `Servidor ejecutándose en http://localhost:${PORT}`
+            );
+        });
+    } catch (error) {
+        console.error(
+            'No fue posible conectar con PostgreSQL:',
+            error.message
+        );
+
+        process.exitCode = 1;
+    }
+}
+
+iniciarServidor();
