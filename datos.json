@@ -1,0 +1,43 @@
+[
+    {
+        "nombre": "Teclado Logitech",
+        "precio": 350,
+        "categoria": "Accesorios"
+    },
+    {
+        "nombre": "Mouse inalámbrico",
+        "precio": 250,
+        "categoria": "Accesorios" 
+    },
+    {
+        "nombre": "Laptop Lenovo",
+        "precio": 12500,
+        "categoria": "Computación"
+    },
+    {
+        "nombre": "Disco SSD 1TB",
+        "precio": 1450,
+        "categoria": "Almacenamiento"
+    },
+    {
+        "nombre": "Audífonos Sony",
+        "precio": 890,
+        "categoria": "Audio"
+    },
+    {
+        "nombre": "Webcam HD",
+        "precio": 620,
+        "categoria": "Accesorios" 
+    },
+    {
+        "nombre": "Impresora HP",
+        "precio": 2100,
+        "categoria": "Oficina"
+    },
+    {
+        "nombre": "Bocina Bluetooth",
+        "precio": 540,
+        "categoria": "Audio"
+    }
+
+]

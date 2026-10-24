@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inventario de productos</title>
+
+    <!-- Archivo de estilos -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Librería externa Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Archivo JavaScript de la aplicación -->
+    <script src="app.js" defer></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>Inventario de productos</h1>
+        <p>Visualización de datos desde una API REST</p>
+    </header>
+
+    <main>
+
+        <section class="panel">
+            <h2>Productos registrados</h2>
+
+            <p id="estado">Cargando productos...</p>
+
+            <div class="tabla-contenedor">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Precio</th>
+                            <th>Categoría</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="tabla-datos">
+                        <!-- Aquí aparecerán los productos -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Gráfica de precios</h2>
+
+            <div class="grafica-contenedor">
+                <canvas id="miGrafica"></canvas>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>Práctica 3 - Unidad 2</p>
+    </footer>
+
+</body>
+</html>
